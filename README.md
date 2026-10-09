@@ -51,6 +51,8 @@ Der er intet build-trin – filerne kan hostes direkte.
 2. *Settings → Pages* → vælg branch og mappen med `index.html`.
 3. Siden er nu tilgængelig på `https://<bruger>.github.io/<repo>/`.
 
+GitHub Pages lader browsere cache filer i 10 minutter. Derfor har alle `<script>`- og `<link>`-tags i `index.html` et versionsnummer (`?v=0.4`). **Skift versionsnummeret, hver gang du udgiver en ny version**, så en cachet fil aldrig blandes med en ny `index.html`. Efter en udgivelse kan det tage et par minutter, før siden er opdateret.
+
 ## Indlejring i Moodle (H5P)
 
 Brug indholdstypen **Iframe Embedder** med GitHub Pages-URL'en. Sæt en højde på mindst **800 px** (layoutet fylder hele iframen; under 1000 px bredde stables panelerne).
