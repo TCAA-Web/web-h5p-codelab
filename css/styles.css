@@ -816,12 +816,62 @@ code {
   color: var(--ok);
 }
 
-#preview {
+#preview:not([hidden]) {
   flex: 1;
   min-height: 0;
   width: 100%;
   border: 0;
   background: #fff;
+}
+
+.console {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px 14px;
+  background: var(--card-solid);
+  font-family: var(--mono);
+  font-size: 0.86rem;
+  line-height: 1.6;
+}
+
+.console-line {
+  padding: 2px 0;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-bottom: 1px solid var(--border);
+}
+
+.console-line.warn {
+  color: var(--warn);
+}
+
+.console-line.error {
+  color: var(--bad);
+}
+
+.console-line.hint {
+  color: var(--muted);
+  border-bottom: 0;
+  font-family: var(--font);
+}
+
+.course-select {
+  max-width: 200px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  border: 1px solid var(--border);
+  background: var(--card-2);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.course-select option {
+  background: var(--card-solid);
+  color: var(--text);
 }
 
 /* ---------- Toasts & modal ---------- */

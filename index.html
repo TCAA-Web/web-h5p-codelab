@@ -14,8 +14,8 @@
         <div class="brand">
           <span class="brand-logo" aria-hidden="true">&lt;/&gt;</span>
           <div class="brand-text">
-            <strong>HTML Coding Lab</strong>
-            <span>Begynder-forløb · 9 udfordringer</span>
+            <strong id="brandTitle">Code Lab</strong>
+            <span id="brandSubtitle"></span>
           </div>
         </div>
 
@@ -28,6 +28,7 @@
         </div>
 
         <div class="top-actions">
+          <select class="course-select" id="courseSelect" aria-label="Vælg kursus" hidden></select>
           <button class="btn btn-ghost" id="badgesBtn" type="button" title="Se dine badges">
             <span aria-hidden="true">🏅</span> <span class="hide-sm">Badges</span> <span class="count-pill" id="badgeCount">0</span>
           </button>
@@ -58,7 +59,7 @@
               Feedback <span class="tab-badge" id="feedbackBadge" hidden></span>
             </button>
             <button class="tab" role="tab" id="tab-syntax" aria-controls="panel-syntax" aria-selected="false" data-tab="syntax" type="button">
-              Syntaks <span class="tab-badge" id="syntaxBadge" hidden></span>
+              <span id="syntaxLabel">Syntaks</span> <span class="tab-badge" id="syntaxBadge" hidden></span>
             </button>
           </div>
 
@@ -87,7 +88,7 @@
         <section class="right">
           <div class="card editor-card">
             <div class="card-bar">
-              <div class="file-tab"><span class="file-dot"></span> index.html</div>
+              <div class="file-tab"><span class="file-dot"></span> <span id="fileName">index.html</span></div>
               <div class="bar-actions">
                 <button class="btn btn-ghost btn-small" id="resetBtn" type="button">Nulstil</button>
                 <button class="btn btn-primary" id="runBtn" type="button" title="Ctrl/⌘ + Enter">▶ Tjek kode</button>
@@ -100,7 +101,7 @@
           <div class="card preview-card">
             <div class="card-bar">
               <div class="browser-dots" aria-hidden="true"><i></i><i></i><i></i></div>
-              <div class="url-pill">Live preview</div>
+              <div class="url-pill" id="previewLabel">Live preview</div>
               <span class="live-dot" title="Opdateres mens du skriver">● live</span>
             </div>
             <iframe
@@ -109,6 +110,7 @@
               sandbox="allow-popups allow-popups-to-escape-sandbox"
               referrerpolicy="no-referrer"
             ></iframe>
+            <div class="console" id="console" role="log" aria-label="Konsol" hidden></div>
           </div>
         </section>
       </main>
@@ -125,9 +127,13 @@
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js"></script>
-    <script src="js/syntax.js"></script>
-    <script src="js/validators.js"></script>
-    <script src="js/challenges.js"></script>
+    <script src="js/registry.js"></script>
+    <script src="js/engines/html-syntax.js"></script>
+    <script src="js/engines/html-validators.js"></script>
+    <script src="js/engines/html.js"></script>
+    <script src="js/engines/typescript.js"></script>
+    <script src="js/courses/html.js"></script>
+    <script src="js/courses/typescript.js"></script>
     <script src="js/storage.js"></script>
     <script src="js/achievements.js"></script>
     <script src="js/app.js"></script>

@@ -1,20 +1,30 @@
 /*
- * HTML Coding Lab – hovedlogik
- * Editor (Monaco), live preview, validering, progression, badges, tema og autosave.
+ * Code Lab – hovedlogik (fælles for alle kurser)
+ * Editor (Monaco), preview, validering, progression, badges, tema og autosave.
+ * Kurset vælges med ?course=<id> (se js/courses/). Sprogspecifik logik ligger i en motor (js/engines/).
  */
 (function () {
   "use strict";
 
   const $ = (id) => document.getElementById(id);
+  const courseParam = new URLSearchParams(window.location.search).get("course");
+  const COURSE = COURSES[courseParam] || COURSES.html;
+  const ENGINE = ENGINES[COURSE.engine];
+  const CHALLENGES = COURSE.challenges;
+  const BADGES = Achievements.forCourse(COURSE);
   const TOTAL = CHALLENGES.length;
   const MONACO_BASE = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min";
 
-  const state = LabStorage.load();
+  const state = LabStorage.load(COURSE.id);
   state.current = Math.min(Math.max(0, state.current | 0), TOTAL - 1);
 
   let editor = null;
   let activeTab = "task";
   let lastResult = null;
+  let engineReady = true;
+  let running = false;
+  let previewSeq = 0;
+  let lintSeq = 0;
   let suppressChange = false;
   let saveTimer, previewTimer, lintTimer;
 
@@ -83,7 +93,7 @@
   /* ---------------------------------------------------------------- Persistence */
 
   function persist() {
-    LabStorage.save(state);
+    LabStorage.save(COURSE.id, state);
   }
 
   function persistSoon() {
@@ -107,7 +117,7 @@
 
   $("themeBtn").addEventListener("click", () => {
     const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
-    state.theme = next;
+    LabStorage.setTheme(next);
     state.themeToggles += 1;
     applyTheme(next);
     afterProgress();
@@ -130,9 +140,13 @@
       rules: [],
       colors: { "editor.background": "#ffffff", "editorLineNumber.foreground": "#9aa3c7" },
     });
+    const model = monaco.editor.createModel(
+      "",
+      ENGINE.language,
+      ENGINE.language === "typescript" ? monaco.Uri.parse("file:///main.ts") : undefined
+    );
     const ed = monaco.editor.create(host, {
-      value: "",
-      language: "html",
+      model,
       theme: name(theme),
       automaticLayout: true,
       minimap: { enabled: false },
@@ -148,9 +162,9 @@
       smoothScrolling: true,
       "semanticHighlighting.enabled": false,
     });
-    const model = ed.getModel();
     return {
       kind: "monaco",
+      model,
       getValue: () => ed.getValue(),
       setValue: (v) => ed.setValue(v),
       onChange: (fn) => ed.onDidChangeModelContent(fn),
@@ -254,20 +268,26 @@
 
   /* ---------------------------------------------------------------- Preview & lint */
 
-  function previewHtml(code) {
-    const base = '<base target="_blank">';
-    return /<head[^>]*>/i.test(code) ? code.replace(/<head[^>]*>/i, (m) => m + base) : code + base;
+  async function updatePreview() {
+    const seq = ++previewSeq;
+    try {
+      await ENGINE.preview(editor.getValue(), { frame: $("preview"), console: $("console") }, () => seq !== previewSeq);
+    } catch (err) {
+      /* preview er kun til pynt – fejl ignoreres */
+    }
   }
 
-  function updatePreview() {
-    $("preview").srcdoc = previewHtml(editor.getValue());
-  }
-
-  function lint() {
-    const result = HTMLSyntax.analyze(editor.getValue());
-    editor.setMarkers(result.issues);
-    renderSyntax(result);
-    return result;
+  async function lint() {
+    const seq = ++lintSeq;
+    try {
+      const result = await ENGINE.analyze(editor.getValue(), editor);
+      if (seq !== lintSeq) return result;
+      if (!ENGINE.ownsMarkers) editor.setMarkers(result.issues);
+      renderSyntax(result);
+      return result;
+    } catch (err) {
+      return null;
+    }
   }
 
   function renderSyntax(result) {
@@ -280,7 +300,7 @@
       badge.textContent = "✓";
       badge.className = "tab-badge is-ok";
       list.append(
-        el("div", { class: "empty" }, [el("span", { class: "big", text: "✅" }), "Ingen syntaksproblemer fundet. Flot!"])
+        el("div", { class: "empty" }, [el("span", { class: "big", text: "✅" }), ENGINE.emptyIssues])
       );
       return;
     }
@@ -474,10 +494,24 @@
 
   /* ---------------------------------------------------------------- Run / check */
 
-  function runCheck() {
+  async function runCheck() {
+    if (!engineReady || running) return;
+    running = true;
+    const runBtn = $("runBtn");
+    runBtn.disabled = true;
+    runBtn.textContent = "⏳ Tjekker…";
     const ch = challenge();
     const code = editor.getValue();
-    const result = Validators.run(ch, code);
+    let result;
+    try {
+      result = await ENGINE.run(ch, code);
+    } catch (err) {
+      result = { passed: false, okCount: 0, total: 1, checks: [{ ok: false, label: "Koden kunne ikke tjekkes", message: String((err && err.message) || err) }] };
+    } finally {
+      running = false;
+      runBtn.disabled = !engineReady;
+      runBtn.textContent = "▶ Tjek kode";
+    }
     lastResult = result;
     state.code[ch.id] = code;
     state.attempts[ch.id] = (state.attempts[ch.id] || 0) + 1;
@@ -512,7 +546,7 @@
   }
 
   function afterProgress() {
-    Achievements.evaluate(state).forEach((b, i) => setTimeout(() => toast(b.icon, "Ny badge: " + b.title, b.desc, true), 500 + i * 600));
+    Achievements.evaluate(state, BADGES).forEach((b, i) => setTimeout(() => toast(b.icon, "Ny badge: " + b.title, b.desc, true), 500 + i * 600));
     renderProgress();
     persist();
   }
@@ -581,7 +615,7 @@
 
   function openBadges() {
     const grid = el("div", { class: "badge-grid" });
-    Achievements.BADGES.forEach((b) => {
+    BADGES.forEach((b) => {
       const earned = !!state.badges[b.id];
       grid.append(
         el("div", { class: "badge " + (earned ? "earned" : "locked") }, [
@@ -592,7 +626,7 @@
       );
     });
     const count = Object.keys(state.badges).length;
-    openModal(`Badges (${count}/${Achievements.BADGES.length})`, grid, [{ label: "Luk", kind: "btn-primary" }]);
+    openModal(`Badges (${count}/${BADGES.length})`, grid, [{ label: "Luk", kind: "btn-primary" }]);
   }
 
   function openFinish() {
@@ -601,10 +635,10 @@
     const stat = (value, label) => el("div", { class: "stat" }, [el("b", { text: String(value) }), el("span", { text: label })]);
     const body = el("div", { class: "finish" }, [
       el("span", { class: "trophy", text: "🏆" }),
-      el("p", { text: "Du har gennemført alle 9 udfordringer i begynder-HTML. Rigtig flot arbejde!" }),
+      el("p", { text: COURSE.finishText }),
       el("div", { class: "stats" }, [
         stat(`${solvedCount()}/${TOTAL}`, "udfordringer"),
-        stat(`${Object.keys(state.badges).length}/${Achievements.BADGES.length}`, "badges"),
+        stat(`${Object.keys(state.badges).length}/${BADGES.length}`, "badges"),
         stat(hints, "hints brugt"),
       ]),
       el("p", { style: "margin-top:12px", text: `Du tjekkede din kode ${attempts} gange i alt.` }),
@@ -620,7 +654,7 @@
       confetti.append(piece);
     }
     $("modal").append(confetti);
-    openModal("HTML Expert!", body, [
+    openModal("Kursus gennemført!", body, [
       { label: "Se badges", run: openBadges },
       { label: "Fortsæt med at øve", kind: "btn-primary" },
     ]);
@@ -655,9 +689,8 @@
 
   $("restartBtn").addEventListener("click", () =>
     confirmDialog("Start forfra?", "Al din kode, dine fremskridt og badges slettes, og du starter på udfordring 1.", "Slet og start forfra", () => {
-      const theme = state.theme;
-      LabStorage.clear();
-      Object.assign(state, LabStorage.defaults(), { theme });
+      LabStorage.clear(COURSE.id);
+      Object.assign(state, LabStorage.defaults());
       loadChallenge();
       persist();
     })
@@ -670,19 +703,53 @@
     persistSoon();
     markStale();
     clearTimeout(previewTimer);
-    previewTimer = setTimeout(updatePreview, 350);
+    previewTimer = setTimeout(updatePreview, ENGINE.previewKind === "console" ? 600 : 350);
     clearTimeout(lintTimer);
-    lintTimer = setTimeout(lint, 250);
+    lintTimer = setTimeout(lint, ENGINE.previewKind === "console" ? 400 : 250);
   }
 
   /* ---------------------------------------------------------------- Boot */
 
-  applyTheme(state.theme || systemTheme());
-  bootEditor(() => {
+  function setupCourseUi() {
+    document.title = COURSE.title;
+    $("brandTitle").textContent = COURSE.title;
+    $("brandSubtitle").textContent = `${COURSE.subtitle} · ${TOTAL} udfordringer`;
+    $("fileName").textContent = COURSE.filename;
+    $("syntaxLabel").textContent = ENGINE.syntaxLabel;
+    $("previewLabel").textContent = ENGINE.previewLabel;
+    $("preview").hidden = ENGINE.previewKind !== "frame";
+    $("console").hidden = ENGINE.previewKind !== "console";
+    $("progress").setAttribute("aria-valuemax", String(TOTAL));
+
+    const ids = Object.keys(COURSES);
+    if (ids.length > 1) {
+      const select = $("courseSelect");
+      ids.forEach((id) => select.append(el("option", { value: id, text: COURSES[id].subtitle })));
+      select.value = COURSE.id;
+      select.hidden = false;
+      select.addEventListener("change", () => {
+        persist();
+        window.location.search = "?course=" + encodeURIComponent(select.value);
+      });
+    }
+  }
+
+  applyTheme(LabStorage.getTheme() || systemTheme());
+  setupCourseUi();
+  bootEditor(async () => {
+    const ready = await ENGINE.init(editor, COURSE);
     editor.onChange(onEditorChange);
     editor.onRun(runCheck);
     editor.setTheme(document.documentElement.dataset.theme);
     loadChallenge();
+    if (ready !== true) {
+      engineReady = false;
+      $("runBtn").disabled = true;
+      const box = $("feedback");
+      box.textContent = "";
+      box.append(el("div", { class: "empty" }, [el("span", { class: "big", text: "⚠️" }), String(ready)]));
+      showTab("feedback");
+    }
     afterProgress();
   });
 })();

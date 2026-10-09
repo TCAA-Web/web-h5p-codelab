@@ -1,5 +1,5 @@
 /*
- * De 9 begynder-udfordringer.
+ * Kursus: HTML for begyndere (9 udfordringer).
  * Tekster understøtter `kode` (backticks) og **fed**. Afsnit adskilles med tomme linjer.
  */
 (function (global) {
@@ -655,5 +655,19 @@
     },
   ];
 
-  global.CHALLENGES = challenges;
+  global.COURSES.html = {
+    id: "html",
+    engine: "html",
+    title: "HTML Coding Lab",
+    subtitle: "HTML for begyndere",
+    filename: "index.html",
+    finishText: "Du har gennemført alle udfordringerne i begynder-HTML. Rigtig flot arbejde!",
+    challenges,
+    // Ekstra badges, der kun hører til dette kursus
+    badges: [
+      { id: "bug", icon: "🐞", title: "Fejljæger", desc: "Find alle fejlene i \"Find fejlene\".", test: (s) => !!s.solved.fejlretning },
+      { id: "semantic", icon: "🏛️", title: "Semantik-ninja", desc: "Løs begge semantik-udfordringer.", test: (s) => !!s.solved.semantik && !!s.solved.konvertering },
+      { id: "forms", icon: "📝", title: "Formularbygger", desc: "Byg en tilgængelig formular.", test: (s) => !!s.solved.formularer },
+    ],
+  };
 })(window);

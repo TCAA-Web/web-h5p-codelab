@@ -5,7 +5,7 @@
 (function (global) {
   "use strict";
 
-  const KEY = "htmlLab.v2";
+  const KEY_PREFIX = "codeLab.v3.";
   const memory = {};
 
   function backend() {
@@ -31,7 +31,7 @@
 
   function defaults() {
     return {
-      version: 2,
+      version: 3,
       current: 0,
       solved: {}, // id -> true
       code: {}, // id -> kode
@@ -41,38 +41,54 @@
       firstTry: {}, // id -> true hvis løst i første tjek
       badges: {}, // id -> tidsstempel
       themeToggles: 0,
-      theme: null,
       startedAt: Date.now(),
     };
   }
 
-  function load() {
+  function load(courseId) {
     try {
-      const raw = store.getItem(KEY);
+      const raw = store.getItem(KEY_PREFIX + courseId);
       if (!raw) return defaults();
       const parsed = JSON.parse(raw);
-      if (!parsed || parsed.version !== 2) return defaults();
+      if (!parsed || parsed.version !== 3) return defaults();
       return Object.assign(defaults(), parsed);
     } catch (e) {
       return defaults();
     }
   }
 
-  function save(state) {
+  function save(courseId, state) {
     try {
-      store.setItem(KEY, JSON.stringify(state));
+      store.setItem(KEY_PREFIX + courseId, JSON.stringify(state));
     } catch (e) {
       /* fuld lagerplads – ignorer */
     }
   }
 
-  function clear() {
+  function clear(courseId) {
     try {
-      store.removeItem(KEY);
+      store.removeItem(KEY_PREFIX + courseId);
     } catch (e) {
       /* ignorer */
     }
   }
 
-  global.LabStorage = { load, save, clear, defaults };
+  // Temaet deles mellem kurserne
+  function getTheme() {
+    try {
+      return store.getItem("codeLab.theme");
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function setTheme(theme) {
+    try {
+      store.setItem("codeLab.theme", theme);
+    } catch (e) {
+      /* ignorer */
+    }
+  }
+
+  global.LabStorage = { load, save, clear, defaults, getTheme, setTheme };
 })(window);
