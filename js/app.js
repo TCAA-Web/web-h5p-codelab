@@ -143,7 +143,7 @@
     const model = monaco.editor.createModel(
       "",
       ENGINE.language,
-      ENGINE.language === "typescript" ? monaco.Uri.parse("file:///main.ts") : undefined
+      ENGINE.language === "typescript" ? monaco.Uri.parse("file:///" + COURSE.filename) : undefined
     );
     const ed = monaco.editor.create(host, {
       model,
@@ -271,7 +271,7 @@
   async function updatePreview() {
     const seq = ++previewSeq;
     try {
-      await ENGINE.preview(editor.getValue(), { frame: $("preview"), console: $("console") }, () => seq !== previewSeq);
+      await ENGINE.preview(editor.getValue(), { frame: $("preview"), console: $("console") }, () => seq !== previewSeq, challenge());
     } catch (err) {
       /* preview er kun til pynt – fejl ignoreres */
     }

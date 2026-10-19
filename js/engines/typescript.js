@@ -15,7 +15,6 @@
 (function (global) {
   "use strict";
 
-  const TIMEOUT_MS = 3000;
   const CONSOLE_DTS =
     "declare const console: { log(...data: any[]): void; info(...data: any[]): void; warn(...data: any[]): void; error(...data: any[]): void; };";
 
@@ -80,82 +79,13 @@
   const WORKER_SRC = "(" + workerMain.toString() + ")()";
 
   function execute(js, checks) {
-    return new Promise((resolve) => {
-      const url = URL.createObjectURL(new Blob([WORKER_SRC], { type: "text/javascript" }));
-      let worker;
-      let timer;
-      const finish = (res) => {
-        clearTimeout(timer);
-        if (worker) worker.terminate();
-        URL.revokeObjectURL(url);
-        resolve(Object.assign({ logs: [], error: null, results: [] }, res));
-      };
-      try {
-        worker = new Worker(url);
-      } catch (err) {
-        finish({ error: "Koden kunne ikke startes: " + err.message });
-        return;
-      }
-      timer = setTimeout(
-        () => finish({ error: "Koden kørte i mere end 3 sekunder og blev stoppet. Har du et uendeligt loop?" }),
-        TIMEOUT_MS
-      );
-      worker.onmessage = (e) => finish(e.data);
-      worker.onerror = (e) => finish({ error: e.message || "Ukendt fejl i koden." });
-      worker.postMessage({ js, checks });
-    });
+    return TSCore.runWorker(WORKER_SRC, { js, checks });
   }
 
-  // Fjerner kommentarer og indholdet af strenge, så regex-tjek ikke snydes af tekst
-  function stripCode(code) {
-    const re = /\/\*[\s\S]*?\*\/|\/\/[^\n]*|"(?:\\.|[^"\\\n])*"|'(?:\\.|[^'\\\n])*'|`(?:\\[\s\S]|[^\\`])*`/g;
-    return code.replace(re, (m) => (m.startsWith("/") ? " " : '""'));
-  }
-
-  function flatten(msg) {
-    if (typeof msg === "string") return msg;
-    return msg.messageText + (msg.next ? " " + msg.next.map(flatten).join(" ") : "");
-  }
-
+  const { stripCode, analyze: analyzeModel, emit: emitModel } = TSCore;
   let model = null;
-
-  async function getWorker() {
-    const factory = await monaco.languages.typescript.getTypeScriptWorker();
-    return factory(model.uri);
-  }
-
-  async function emit() {
-    const worker = await getWorker();
-    const out = await worker.getEmitOutput(model.uri.toString());
-    const file = out.outputFiles.find((f) => /\.js$/.test(f.name));
-    return file ? file.text : "";
-  }
-
-  async function analyze() {
-    const worker = await getWorker();
-    const uri = model.uri.toString();
-    const [syntactic, semantic] = await Promise.all([worker.getSyntacticDiagnostics(uri), worker.getSemanticDiagnostics(uri)]);
-    const issues = syntactic
-      .concat(semantic)
-      .filter((d) => d.category === 0 || d.category === 1)
-      .map((d) => {
-        const start = model.getPositionAt(d.start || 0);
-        const end = model.getPositionAt((d.start || 0) + (d.length || 1));
-        return {
-          severity: d.category === 1 ? "error" : "warning",
-          message: `${flatten(d.messageText)} (TS${d.code})`,
-          line: start.lineNumber,
-          col: start.column,
-          endLine: end.lineNumber,
-          endCol: end.column,
-        };
-      });
-    return {
-      issues,
-      errors: issues.filter((i) => i.severity === "error"),
-      warnings: issues.filter((i) => i.severity === "warning"),
-    };
-  }
+  const analyze = () => analyzeModel(model);
+  const emit = () => emitModel(model);
 
   function renderConsole(box, out) {
     box.textContent = "";

@@ -22,6 +22,10 @@ Samme UI bruges til flere kurser. Kurset vælges med en URL-parameter, så hver 
 |---|---|
 | HTML for begyndere (standard) | `index.html` eller `index.html?course=html` |
 | TypeScript for begyndere | `index.html?course=typescript` |
+| React Intro (`App.tsx`) | `index.html?course=react-intro` |
+| React Components | `index.html?course=react-components` |
+| React Children | `index.html?course=react-children` |
+| React Props | `index.html?course=react-props` |
 
 Hvert kursus gemmer sit eget forløb (kode, fremskridt, badges) i `sessionStorage`. Der er også en kursusvælger i topbaren.
 
@@ -34,10 +38,14 @@ assets/kat.svg                Billede brugt i HTML-opgaverne
 js/registry.js                Registre: window.COURSES og window.ENGINES
 js/courses/html.js            HTML-kursus (opgaver, starterkode, hints, krav)
 js/courses/typescript.js      TypeScript-kursus
+js/courses/react-*.js         React-kurser (intro, components, children, props)
 js/engines/html.js            HTML-motor (preview + validering)
 js/engines/html-syntax.js     HTML-syntaksanalyse
 js/engines/html-validators.js DOM-baserede validatorer
+js/engines/ts-core.js         Fælles TypeScript-hjælpere (typefejl, JS-udskrift, worker-kørsel)
 js/engines/typescript.js      TypeScript-motor (typefejl, kørsel i Web Worker, validering)
+js/engines/react.js           React/TSX-motor (typefejl, visning med react-dom/server, validering)
+js/engines/react-types/       Forenklede React-typer (index.d.ts, jsx-runtime.d.ts)
 js/storage.js                 Autosave i sessionStorage
 js/achievements.js            Generiske badges + kursusspecifikke badges
 js/app.js                     UI, editor, progression (fælles for alle kurser)
@@ -90,9 +98,27 @@ Et krav er enten **statisk** eller **kørende**:
 
 `c` har `c.code`, `c.clean` (uden kommentarer og strenge), `c.logs` (console.log-output), `c.errors` (typefejl), `c.has(regex)`. `runtime`-funktioner sendes som tekst til workeren – brug **kun** `get`, `logs` og egne variabler, og skriv dem som pilefunktioner. Koden køres med `strict: true`; ændr det med `compilerOptions` i kursusobjektet.
 
+### React (`js/courses/react-*.js`)
+
+Elevens kode er en `App.tsx`. Komponenten (`export default`, `App` eller `entry`) vises med `react-dom/server` i en Web Worker og tjekkes som HTML. Kurset kan derfor vise komponenter, JSX, props og children – men ikke events eller tilstand efter første render.
+
+```js
+// Statisk: DOM-baseret tjek af det viste resultat og af koden
+{ label: "Listen viser tre frugter", fail: "…",
+  test: (c) => c.texts(c.$$("ul > li")).join("|") === "Æble|Banan|Kirsebær" || "Forkert liste" }
+
+// Kørende: render et komponent med andre props, inde i workeren
+{ label: "Sektion viser sine children", fail: "…",
+  runtime: (t) => t.text(t.render("Sektion", { titel: "A" }, "B")) === "AB" }
+```
+
+`c` har `c.$`, `c.$$`, `c.text(el)`, `c.texts(els)`, `c.root`, `c.html`, `c.code`, `c.clean`, `c.has(regex)`, `c.errors`, `c.logs` og `c.warnings` (React-advarsler, fx manglende `key`). `t` har `t.render(navn, props, ...children)`, `t.text(html)`, `t.get(navn)`, `t.h` (createElement) og `t.logs`. En opgave kan sætte `entry: "Navn"` og `entryProps: {…}` for at vise et andet komponent end `App`.
+
+Kurset kræver adgang til cdnjs (Monaco og React hentes derfra). Typerne i `js/engines/react-types/` er forenklede – tilføj flere HTML-tags eller hooks der, hvis dine opgaver har brug for dem.
+
 ### Nyt kursus
 
-1. Opret `js/courses/<id>.js`, der sætter `window.COURSES.<id> = { id, engine, title, subtitle, filename, finishText, challenges, badges }`.
+1. Opret `js/courses/<id>.js`, der sætter `window.COURSES.<id> = { id, engine, title, subtitle, filename, finishText, challenges, badges }`. `engine` er `html`, `typescript` eller `react`.
 2. Tilføj et `<script>` til filen i `index.html` (efter motorerne).
 3. Åbn `index.html?course=<id>`.
 
