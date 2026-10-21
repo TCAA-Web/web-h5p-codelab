@@ -1,3 +1,5 @@
+import { VideoHTMLAttributes } from "react";
+
 // Forenklede React-typer til Code Lab (inspireret af @types/react). Kun det, begyndere har brug for.
 export = React;
 export as namespace React;
@@ -16,7 +18,12 @@ declare namespace React {
     | null
     | undefined;
 
-  interface ReactElement<P = any, T extends string | JSXElementConstructor<any> = string | JSXElementConstructor<any>> {
+  interface ReactElement<
+    P = any,
+    T extends string | JSXElementConstructor<any> =
+      | string
+      | JSXElementConstructor<any>,
+  > {
     type: T;
     props: P;
     key: string | null;
@@ -39,7 +46,9 @@ declare namespace React {
     current: T;
   }
 
-  type PropsWithChildren<P = unknown> = P & { children?: ReactNode | undefined };
+  type PropsWithChildren<P = unknown> = P & {
+    children?: ReactNode | undefined;
+  };
 
   interface FunctionComponent<P = {}> {
     (props: P): ReactNode;
@@ -48,8 +57,14 @@ declare namespace React {
   type FC<P = {}> = FunctionComponent<P>;
   type VFC<P = {}> = FunctionComponent<P>;
 
-  type ComponentProps<T extends keyof JSX.IntrinsicElements | JSXElementConstructor<any>> =
-    T extends JSXElementConstructor<infer P> ? P : T extends keyof JSX.IntrinsicElements ? JSX.IntrinsicElements[T] : {};
+  type ComponentProps<
+    T extends keyof JSX.IntrinsicElements | JSXElementConstructor<any>,
+  > =
+    T extends JSXElementConstructor<infer P>
+      ? P
+      : T extends keyof JSX.IntrinsicElements
+        ? JSX.IntrinsicElements[T]
+        : {};
 
   // ---------- CSS ----------
   interface CSSProperties {
@@ -65,7 +80,10 @@ declare namespace React {
     stopPropagation(): void;
     type: string;
   }
-  interface MouseEvent<T = Element, E = globalThis.MouseEvent> extends SyntheticEvent<T, E> {
+  interface MouseEvent<
+    T = Element,
+    E = globalThis.MouseEvent,
+  > extends SyntheticEvent<T, E> {
     clientX: number;
     clientY: number;
   }
@@ -73,12 +91,20 @@ declare namespace React {
     target: EventTarget & T;
   }
   interface FormEvent<T = Element> extends SyntheticEvent<T> {}
-  interface KeyboardEvent<T = Element> extends SyntheticEvent<T, globalThis.KeyboardEvent> {
+  interface KeyboardEvent<T = Element> extends SyntheticEvent<
+    T,
+    globalThis.KeyboardEvent
+  > {
     key: string;
   }
-  interface FocusEvent<T = Element> extends SyntheticEvent<T, globalThis.FocusEvent> {}
+  interface FocusEvent<T = Element> extends SyntheticEvent<
+    T,
+    globalThis.FocusEvent
+  > {}
 
-  type EventHandler<E extends SyntheticEvent<any>> = { bivarianceHack(event: E): void }["bivarianceHack"];
+  type EventHandler<E extends SyntheticEvent<any>> = {
+    bivarianceHack(event: E): void;
+  }["bivarianceHack"];
   type MouseEventHandler<T = Element> = EventHandler<MouseEvent<T>>;
   type ChangeEventHandler<T = Element> = EventHandler<ChangeEvent<T>>;
   type FormEventHandler<T = Element> = EventHandler<FormEvent<T>>;
@@ -116,7 +142,13 @@ declare namespace React {
 
   interface AnchorHTMLAttributes<T> extends HTMLAttributes<T> {
     href?: string | undefined;
-    target?: "_blank" | "_self" | "_parent" | "_top" | (string & {}) | undefined;
+    target?:
+      | "_blank"
+      | "_self"
+      | "_parent"
+      | "_top"
+      | (string & {})
+      | undefined;
     rel?: string | undefined;
     download?: any;
   }
@@ -199,16 +231,36 @@ declare namespace React {
     readonly $$typeof: symbol;
   }
 
-  function createElement(type: string | JSXElementConstructor<any>, props?: any, ...children: ReactNode[]): ReactElement;
-  function cloneElement<P>(element: ReactElement<P>, props?: Partial<P> & Attributes, ...children: ReactNode[]): ReactElement<P>;
-  function isValidElement(object: {} | null | undefined): object is ReactElement;
+  function createElement(
+    type: string | JSXElementConstructor<any>,
+    props?: any,
+    ...children: ReactNode[]
+  ): ReactElement;
+  function cloneElement<P>(
+    element: ReactElement<P>,
+    props?: Partial<P> & Attributes,
+    ...children: ReactNode[]
+  ): ReactElement<P>;
+  function isValidElement(
+    object: {} | null | undefined,
+  ): object is ReactElement;
 
   const Children: {
-    map<T, C>(children: C | readonly C[], fn: (child: C, index: number) => T): C extends null | undefined ? C : Array<Exclude<T, boolean | null | undefined>>;
-    forEach<C>(children: C | readonly C[], fn: (child: C, index: number) => void): void;
+    map<T, C>(
+      children: C | readonly C[],
+      fn: (child: C, index: number) => T,
+    ): C extends null | undefined
+      ? C
+      : Array<Exclude<T, boolean | null | undefined>>;
+    forEach<C>(
+      children: C | readonly C[],
+      fn: (child: C, index: number) => void,
+    ): void;
     count(children: any): number;
     only<C>(children: C): C extends any[] ? never : C;
-    toArray(children: ReactNode | ReactNode[]): Array<Exclude<ReactNode, boolean | null | undefined>>;
+    toArray(
+      children: ReactNode | ReactNode[],
+    ): Array<Exclude<ReactNode, boolean | null | undefined>>;
   };
 
   // ---------- Hooks ----------
@@ -217,14 +269,22 @@ declare namespace React {
   type EffectCallback = () => void | (() => void);
   type DependencyList = readonly unknown[];
 
-  function useState<S>(initialState: S | (() => S)): [S, Dispatch<SetStateAction<S>>];
-  function useState<S = undefined>(): [S | undefined, Dispatch<SetStateAction<S | undefined>>];
+  function useState<S>(
+    initialState: S | (() => S),
+  ): [S, Dispatch<SetStateAction<S>>];
+  function useState<S = undefined>(): [
+    S | undefined,
+    Dispatch<SetStateAction<S | undefined>>,
+  ];
   function useEffect(effect: EffectCallback, deps?: DependencyList): void;
   function useRef<T>(initialValue: T): MutableRefObject<T>;
   function useRef<T>(initialValue: T | null): RefObject<T>;
   function useRef<T = undefined>(): MutableRefObject<T | undefined>;
   function useMemo<T>(factory: () => T, deps: DependencyList): T;
-  function useCallback<T extends (...args: any[]) => any>(callback: T, deps: DependencyList): T;
+  function useCallback<T extends (...args: any[]) => any>(
+    callback: T,
+    deps: DependencyList,
+  ): T;
 
   // ---------- JSX ----------
   namespace JSX {
@@ -282,6 +342,7 @@ declare namespace React {
       section: HTMLAttributes<HTMLElement>;
       select: SelectHTMLAttributes<HTMLSelectElement>;
       small: HTMLAttributes<HTMLElement>;
+      source: SourceHTMLAttributes<HTMLSourceElement>;
       span: HTMLAttributes<HTMLSpanElement>;
       strong: HTMLAttributes<HTMLElement>;
       sub: HTMLAttributes<HTMLElement>;
@@ -295,8 +356,10 @@ declare namespace React {
       thead: HTMLAttributes<HTMLTableSectionElement>;
       time: HTMLAttributes<HTMLTimeElement>;
       tr: HTMLAttributes<HTMLTableRowElement>;
+      s;
       u: HTMLAttributes<HTMLElement>;
       ul: HTMLAttributes<HTMLUListElement>;
+      video: VideoHTMLAttributes<HTMLVideoElement>;
     }
   }
 }
@@ -305,11 +368,16 @@ declare global {
   namespace JSX {
     interface Element extends React.JSX.Element {}
     interface ElementClass extends React.JSX.ElementClass {}
-    interface ElementAttributesProperty extends React.JSX.ElementAttributesProperty {}
-    interface ElementChildrenAttribute extends React.JSX.ElementChildrenAttribute {}
+    interface ElementAttributesProperty
+      extends React.JSX.ElementAttributesProperty {}
+    interface ElementChildrenAttribute
+      extends React.JSX.ElementChildrenAttribute {}
     type ElementType = React.JSX.ElementType;
     interface IntrinsicAttributes extends React.JSX.IntrinsicAttributes {}
-    type LibraryManagedAttributes<C, P> = React.JSX.LibraryManagedAttributes<C, P>;
+    type LibraryManagedAttributes<C, P> = React.JSX.LibraryManagedAttributes<
+      C,
+      P
+    >;
     interface IntrinsicElements extends React.JSX.IntrinsicElements {}
   }
 }

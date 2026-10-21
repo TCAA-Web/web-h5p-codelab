@@ -56,7 +56,7 @@
     self.console = fakeConsole;
 
     self.onmessage = (e) => {
-      const { js, checks, entry, entryProps } = e.data;
+      const { js, checks, entry, entryProps, assets } = e.data;
       logs.length = 0;
       if (loadError) {
         self.postMessage({ logs: [], error: loadError, html: null, results: [] });
@@ -92,7 +92,19 @@
       const modules = { react: R, "react/jsx-runtime": jsxRuntime, "react/jsx-dev-runtime": jsxRuntime };
       const requireShim = (name) => {
         if (name in modules) return modules[name];
-        throw new Error('Kan ikke importere "' + name + '". I dette kursus kan du kun importere fra "react".');
+        // Billeder: filerne ligger i mappen assets ved siden af App.tsx. Importen giver stien (som i Vite).
+        if (/\.(jpe?g|png|gif|svg|webp|mp4)$/i.test(name)) {
+          const available = Object.keys(assets);
+          const file = name.split("/").pop();
+          if (!name.startsWith("./assets/")) {
+            throw new Error('Kan ikke finde "' + name + '". Billederne ligger i mappen assets, så stien skal starte med "./assets/", fx "./assets/' + (available[0] || "billede.jpg") + '".');
+          }
+          if (!(file in assets)) {
+            throw new Error('Kan ikke finde billedet "' + name + '". Tilgængelige billeder: ' + available.map((f) => "./assets/" + f).join(", ") + ".");
+          }
+          return assets[file];
+        }
+        throw new Error('Kan ikke importere "' + name + '". I dette kursus kan du kun importere fra "react" og assets fra "./assets/".');
       };
 
       let get = null;
@@ -190,8 +202,24 @@
 
   let model = null;
 
+  // Filer i assets/ som kan importeres i opgaverne. Fuld URL, så billedet også findes inde i preview-iframen.
+  const ASSET_FILES = ["kat.svg", "mouse.jpg", "skyline.mp4"];
+  function assetUrls() {
+    const urls = {};
+    ASSET_FILES.forEach((f) => {
+      urls[f] = new URL("assets/" + f, document.baseURI).href;
+    });
+    return urls;
+  }
+
   function execute(js, challenge, checks) {
-    return TSCore.runWorker(WORKER_SRC, { js, checks, entry: challenge.entry || null, entryProps: challenge.entryProps || null });
+    return TSCore.runWorker(WORKER_SRC, {
+      js,
+      checks,
+      entry: challenge.entry || null,
+      entryProps: challenge.entryProps || null,
+      assets: assetUrls(),
+    });
   }
 
   async function loadTypes() {
@@ -200,8 +228,8 @@
       if (!res.ok) throw new Error(file + ": " + res.status);
       return res.text();
     };
-    const [index, jsx] = await Promise.all([fetchText("index.d.ts"), fetchText("jsx-runtime.d.ts")]);
-    return { index, jsx };
+    const [index, jsx, assets] = await Promise.all([fetchText("index.d.ts"), fetchText("jsx-runtime.d.ts"), fetchText("assets.d.ts")]);
+    return { index, jsx, assets };
   }
 
   function evaluateStatic(check, ctx) {
@@ -250,6 +278,7 @@
       );
       ts.typescriptDefaults.addExtraLib(types.index, "file:///node_modules/@types/react/index.d.ts");
       ts.typescriptDefaults.addExtraLib(types.jsx, "file:///node_modules/@types/react/jsx-runtime.d.ts");
+      ts.typescriptDefaults.addExtraLib(types.assets, "file:///lab/assets.d.ts");
       ts.typescriptDefaults.setEagerModelSync(true);
       model = editor.model;
       return true;
@@ -259,7 +288,10 @@
 
     async preview(code, ui, isStale, challenge) {
       const out = await execute(await TSCore.emit(model), challenge, []);
-      if (!isStale()) ui.frame.srcdoc = previewDoc(out);
+      if (isStale()) return;
+      // Safari bygger videokontrollerne med script, så de virker kun med allow-scripts. Uden allow-same-origin er koden stadig isoleret fra siden.
+      ui.frame.setAttribute("sandbox", "allow-scripts allow-popups allow-popups-to-escape-sandbox");
+      ui.frame.srcdoc = previewDoc(out);
     },
 
     async run(challenge, code) {
@@ -290,6 +322,7 @@
         $: (sel, root) => (root || doc).querySelector(sel),
         $$: (sel, root) => Array.from((root || doc).querySelectorAll(sel)),
         text: (el) => (el ? norm(el.textContent) : ""),
+        attr: (el, name) => (el ? norm(el.getAttribute(name)) : ""),
         texts: (els) => els.map((e) => norm(e.textContent)),
         logs: logTexts,
         warnings: out.logs.filter((l) => l.level === "warn" || l.level === "error").map((l) => l.text),

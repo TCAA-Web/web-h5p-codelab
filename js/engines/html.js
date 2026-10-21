@@ -32,6 +32,7 @@
       return HTMLSyntax.analyze(code);
     },
     async preview(code, ui) {
+      ui.frame.setAttribute("sandbox", "allow-popups allow-popups-to-escape-sandbox");
       ui.frame.srcdoc = previewHtml(code);
     },
     async run(challenge, code) {

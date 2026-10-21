@@ -5,7 +5,10 @@
     <meta name="viewport" content="width=device-width,initial-scale=1" />
     <meta name="color-scheme" content="dark light" />
     <title>HTML Coding Lab</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%AA%3C/text%3E%3C/svg%3E" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%AA%3C/text%3E%3C/svg%3E"
+    />
     <link rel="stylesheet" href="css/styles.css?v=0.5" />
   </head>
   <body>
@@ -19,23 +22,57 @@
           </div>
         </div>
 
-        <div class="progress" id="progress" role="progressbar" aria-label="Fremskridt" aria-valuemin="0" aria-valuemax="9" aria-valuenow="0">
+        <div
+          class="progress"
+          id="progress"
+          role="progressbar"
+          aria-label="Fremskridt"
+          aria-valuemin="0"
+          aria-valuemax="9"
+          aria-valuenow="0"
+        >
           <div class="progress-meta">
             <span id="progressLabel">0 / 9 løst</span>
             <span id="progressPct">0 %</span>
           </div>
-          <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+          <div class="progress-track">
+            <div class="progress-fill" id="progressFill"></div>
+          </div>
         </div>
 
         <div class="top-actions">
-          <select class="course-select" id="courseSelect" aria-label="Vælg kursus" hidden></select>
-          <button class="btn btn-ghost" id="badgesBtn" type="button" title="Se dine badges">
-            <span aria-hidden="true">🏅</span> <span class="hide-sm">Badges</span> <span class="count-pill" id="badgeCount">0</span>
+          <select
+            class="course-select"
+            id="courseSelect"
+            aria-label="Vælg kursus"
+            hidden
+          ></select>
+          <button
+            class="btn btn-ghost"
+            id="badgesBtn"
+            type="button"
+            title="Se dine badges"
+          >
+            <span aria-hidden="true">🏅</span>
+            <span class="hide-sm">Badges</span>
+            <span class="count-pill" id="badgeCount">0</span>
           </button>
-          <button class="btn btn-icon" id="themeBtn" type="button" aria-label="Skift mellem dark og light mode" title="Skift tema">
+          <button
+            class="btn btn-icon"
+            id="themeBtn"
+            type="button"
+            aria-label="Skift mellem dark og light mode"
+            title="Skift tema"
+          >
             <span id="themeIcon" aria-hidden="true">🌙</span>
           </button>
-          <button class="btn btn-icon" id="restartBtn" type="button" aria-label="Start hele forløbet forfra" title="Start forfra">
+          <button
+            class="btn btn-icon"
+            id="restartBtn"
+            type="button"
+            aria-label="Start hele forløbet forfra"
+            title="Start forfra"
+          >
             <span aria-hidden="true">↺</span>
           </button>
         </div>
@@ -54,32 +91,77 @@
           </div>
 
           <div class="tabs" role="tablist">
-            <button class="tab is-active" role="tab" id="tab-task" aria-controls="panel-task" aria-selected="true" data-tab="task" type="button">Opgave</button>
-            <button class="tab" role="tab" id="tab-feedback" aria-controls="panel-feedback" aria-selected="false" data-tab="feedback" type="button">
+            <button
+              class="tab is-active"
+              role="tab"
+              id="tab-task"
+              aria-controls="panel-task"
+              aria-selected="true"
+              data-tab="task"
+              type="button"
+            >
+              Opgave
+            </button>
+            <button
+              class="tab"
+              role="tab"
+              id="tab-feedback"
+              aria-controls="panel-feedback"
+              aria-selected="false"
+              data-tab="feedback"
+              type="button"
+            >
               Feedback <span class="tab-badge" id="feedbackBadge" hidden></span>
             </button>
-            <button class="tab" role="tab" id="tab-syntax" aria-controls="panel-syntax" aria-selected="false" data-tab="syntax" type="button">
-              <span id="syntaxLabel">Syntaks</span> <span class="tab-badge" id="syntaxBadge" hidden></span>
+            <button
+              class="tab"
+              role="tab"
+              id="tab-syntax"
+              aria-controls="panel-syntax"
+              aria-selected="false"
+              data-tab="syntax"
+              type="button"
+            >
+              <span id="syntaxLabel">Syntaks</span>
+              <span class="tab-badge" id="syntaxBadge" hidden></span>
             </button>
           </div>
 
           <div class="panels">
-            <div class="panel is-active" id="panel-task" role="tabpanel" aria-labelledby="tab-task">
+            <div
+              class="panel is-active"
+              id="panel-task"
+              role="tabpanel"
+              aria-labelledby="tab-task"
+            >
               <div class="rich" id="chDesc"></div>
               <div class="hints">
                 <div class="hints-head">
                   <h2>Hints</h2>
-                  <button class="btn btn-small" id="hintBtn" type="button">💡 Vis hint</button>
+                  <button class="btn btn-small" id="hintBtn" type="button">
+                    💡 Vis hint
+                  </button>
                 </div>
                 <ol class="hint-list" id="hintList"></ol>
               </div>
             </div>
 
-            <div class="panel" id="panel-feedback" role="tabpanel" aria-labelledby="tab-feedback" aria-live="polite">
+            <div
+              class="panel"
+              id="panel-feedback"
+              role="tabpanel"
+              aria-labelledby="tab-feedback"
+              aria-live="polite"
+            >
               <div id="feedback"></div>
             </div>
 
-            <div class="panel" id="panel-syntax" role="tabpanel" aria-labelledby="tab-syntax">
+            <div
+              class="panel"
+              id="panel-syntax"
+              role="tabpanel"
+              aria-labelledby="tab-syntax"
+            >
               <div id="syntaxList"></div>
             </div>
           </div>
@@ -88,11 +170,34 @@
         <section class="right">
           <div class="card editor-card">
             <div class="card-bar">
-              <div class="file-tab"><span class="file-dot"></span> <span id="fileName">index.html</span></div>
+              <div class="file-tab">
+                <span class="file-dot"></span>
+                <span id="fileName">index.html</span>
+              </div>
               <div class="bar-actions">
-                <button class="btn btn-ghost btn-small" id="resetBtn" type="button">Nulstil</button>
-                <button class="btn btn-primary" id="runBtn" type="button" title="Ctrl/⌘ + Enter">▶ Tjek kode</button>
-                <button class="btn btn-next" id="nextBtn" type="button" disabled>Næste →</button>
+                <button
+                  class="btn btn-ghost btn-small"
+                  id="resetBtn"
+                  type="button"
+                >
+                  Nulstil
+                </button>
+                <button
+                  class="btn btn-primary"
+                  id="runBtn"
+                  type="button"
+                  title="Ctrl/⌘ + Enter"
+                >
+                  ▶ Tjek kode
+                </button>
+                <button
+                  class="btn btn-next"
+                  id="nextBtn"
+                  type="button"
+                  disabled
+                >
+                  Næste →
+                </button>
               </div>
             </div>
             <div id="editor" class="editor" aria-label="Kodeeditor"></div>
@@ -100,9 +205,13 @@
 
           <div class="card preview-card">
             <div class="card-bar">
-              <div class="browser-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+              <div class="browser-dots" aria-hidden="true">
+                <i></i><i></i><i></i>
+              </div>
               <div class="url-pill" id="previewLabel">Live preview</div>
-              <span class="live-dot" title="Opdateres mens du skriver">● live</span>
+              <span class="live-dot" title="Opdateres mens du skriver"
+                >● live</span
+              >
             </div>
             <iframe
               id="preview"
@@ -110,7 +219,13 @@
               sandbox="allow-popups allow-popups-to-escape-sandbox"
               referrerpolicy="no-referrer"
             ></iframe>
-            <div class="console" id="console" role="log" aria-label="Konsol" hidden></div>
+            <div
+              class="console"
+              id="console"
+              role="log"
+              aria-label="Konsol"
+              hidden
+            ></div>
           </div>
         </section>
       </main>
@@ -118,8 +233,20 @@
 
     <div class="toasts" id="toasts" aria-live="polite"></div>
     <div class="modal-backdrop" id="modal" hidden>
-      <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-        <button class="modal-close btn btn-icon" id="modalClose" type="button" aria-label="Luk">✕</button>
+      <div
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modalTitle"
+      >
+        <button
+          class="modal-close btn btn-icon"
+          id="modalClose"
+          type="button"
+          aria-label="Luk"
+        >
+          ✕
+        </button>
         <h2 id="modalTitle"></h2>
         <div id="modalBody"></div>
         <div class="modal-actions" id="modalActions"></div>
@@ -140,6 +267,7 @@
     <script src="js/courses/react-components.js?v=0.5"></script>
     <script src="js/courses/react-children.js?v=0.5"></script>
     <script src="js/courses/react-props.js?v=0.5"></script>
+    <script src="js/courses/react-assets.js?v=0.5"></script>
     <script src="js/storage.js?v=0.5"></script>
     <script src="js/achievements.js?v=0.5"></script>
     <script src="js/app.js?v=0.5"></script>
