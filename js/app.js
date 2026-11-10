@@ -549,6 +549,15 @@
     Achievements.evaluate(state, BADGES).forEach((b, i) => setTimeout(() => toast(b.icon, "Ny badge: " + b.title, b.desc, true), 500 + i * 600));
     renderProgress();
     persist();
+    progressSave();
+    renderCourseOptions();
+  }
+
+  function renderCourseOptions() {
+    Array.from($("courseSelect").options).forEach((opt) => {
+      const { done, total } = progressOf(opt.value);
+      opt.textContent = `${COURSES[opt.value].subtitle} (${done}/${total})`;
+    });
   }
 
   /* ---------------------------------------------------------------- Toasts & modal */
@@ -690,9 +699,11 @@
   $("restartBtn").addEventListener("click", () =>
     confirmDialog("Start forfra?", "Al din kode, dine fremskridt og badges slettes, og du starter på udfordring 1.", "Slet og start forfra", () => {
       LabStorage.clear(COURSE.id);
+      progressClear(COURSE.id);
       Object.assign(state, LabStorage.defaults());
       loadChallenge();
       persist();
+      renderCourseOptions();
     })
   );
 
@@ -727,6 +738,7 @@
       ids.forEach((id) => select.append(el("option", { value: id, text: COURSES[id].subtitle })));
       select.value = COURSE.id;
       select.hidden = false;
+      renderCourseOptions();
       select.addEventListener("change", () => {
         persist();
         window.location.search = "?course=" + encodeURIComponent(select.value);

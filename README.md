@@ -11,7 +11,7 @@ Interaktivt læringsmodul i begynder-HTML. Designet til at blive hostet på **Gi
 - Live preview (sandboxed iframe)
 - Synlig progressionsbar og trin-navigation (næste udfordring låses op, når den forrige er løst)
 - Hints og achievements/badges
-- Autosave af hele forløbet i `sessionStorage` (kode, fremskridt, hints, badges, tema)
+- Autosave af hele forløbet i `localStorage` (kode, fremskridt, hints, badges, tema)
 - Dark/light mode (følger som standard systemets indstilling)
 
 ## Kurser
@@ -29,7 +29,7 @@ Samme UI bruges til flere kurser. Kurset vælges med en URL-parameter, så hver 
 | React Events | `index.html?course=react-events` |
 | React Router | `index.html?course=react-router` |
 
-Hvert kursus gemmer sit eget forløb (kode, fremskridt, badges) i `sessionStorage`. Der er også en kursusvælger i topbaren.
+Hvert kursus gemmer sit eget forløb (kode, fremskridt, badges) i `localStorage`. Der er også en kursusvælger i topbaren.
 
 ## Struktur
 
@@ -48,7 +48,7 @@ js/engines/ts-core.js         Fælles TypeScript-hjælpere (typefejl, JS-udskrif
 js/engines/typescript.js      TypeScript-motor (typefejl, kørsel i Web Worker, validering)
 js/engines/react.js           React/TSX-motor (typefejl, visning med react-dom/server, validering)
 js/engines/react-types/       Forenklede React-typer (index.d.ts, jsx-runtime.d.ts)
-js/storage.js                 Autosave i sessionStorage
+js/storage.js                 Autosave i localStorage
 js/achievements.js            Generiske badges + kursusspecifikke badges
 js/app.js                     UI, editor, progression (fælles for alle kurser)
 ```
@@ -67,7 +67,7 @@ GitHub Pages lader browsere cache filer i 10 minutter. Derfor har alle `<script>
 
 Brug indholdstypen **Iframe Embedder** med GitHub Pages-URL'en. Sæt en højde på mindst **800 px** (layoutet fylder hele iframen; under 1000 px bredde stables panelerne).
 
-> `sessionStorage` bevares, så længe fanen er åben (også ved genindlæsning). Lukkes fanen, starter forløbet forfra.
+> `localStorage` bevares mellem sessions i samme browser. Brug "Start forfra" (↺) for at nulstille et kursus.
 
 ## Tilføj eller ret en udfordring
 

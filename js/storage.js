@@ -1,6 +1,6 @@
 /*
- * Autosave af hele forløbet i sessionStorage.
- * Falder tilbage til hukommelsen, hvis sessionStorage er blokeret (fx i nogle iframes).
+ * Autosave af hele forløbet i localStorage (bevares mellem sessions).
+ * Falder tilbage til hukommelsen, hvis localStorage er blokeret (fx i nogle iframes).
  */
 (function (global) {
   "use strict";
@@ -11,9 +11,9 @@
   function backend() {
     try {
       const probe = "__htmlLab_probe__";
-      global.sessionStorage.setItem(probe, "1");
-      global.sessionStorage.removeItem(probe);
-      return global.sessionStorage;
+      global.localStorage.setItem(probe, "1");
+      global.localStorage.removeItem(probe);
+      return global.localStorage;
     } catch (e) {
       return {
         getItem: (k) => (k in memory ? memory[k] : null),
