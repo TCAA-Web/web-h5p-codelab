@@ -27,6 +27,7 @@ Samme UI bruges til flere kurser. Kurset vælges med en URL-parameter, så hver 
 | React Children | `index.html?course=react-children` |
 | React Props | `index.html?course=react-props` |
 | React Events | `index.html?course=react-events` |
+| React Router | `index.html?course=react-router` |
 
 Hvert kursus gemmer sit eget forløb (kode, fremskridt, badges) i `sessionStorage`. Der er også en kursusvælger i topbaren.
 
@@ -39,7 +40,7 @@ assets/kat.svg                Billede brugt i HTML-opgaverne
 js/registry.js                Registre: window.COURSES og window.ENGINES
 js/courses/html.js            HTML-kursus (opgaver, starterkode, hints, krav)
 js/courses/typescript.js      TypeScript-kursus
-js/courses/react-*.js         React-kurser (intro, components, children, props)
+js/courses/react-*.js         React-kurser (intro, components, children, props, router)
 js/engines/html.js            HTML-motor (preview + validering)
 js/engines/html-syntax.js     HTML-syntaksanalyse
 js/engines/html-validators.js DOM-baserede validatorer
@@ -114,6 +115,8 @@ Elevens kode er en `App.tsx`. Previewet mountes interaktivt i et sandboxed ifram
 ```
 
 `c` har `c.$`, `c.$$`, `c.text(el)`, `c.texts(els)`, `c.root`, `c.html`, `c.code`, `c.clean`, `c.has(regex)`, `c.errors`, `c.logs` og `c.warnings` (React-advarsler, fx manglende `key`). `t` har `t.render(navn, props, ...children)`, `t.text(html)`, `t.get(navn)`, `t.h` (createElement) og `t.logs`. En opgave kan sætte `entry: "Navn"` og `entryProps: {…}` for at vise et andet komponent end `App`.
+
+React Router-kurset bruger `BrowserRouter`, `Routes`, `Route` og `Link` fra `react-router-dom`. Motoren indeholder en lille in-memory preview-adapter til de grundlæggende øvelser; den erstatter ikke den rigtige pakke i et React-projekt.
 
 Kurset kræver adgang til cdnjs (Monaco og React hentes derfra). Typerne i `js/engines/react-types/` er forenklede – tilføj flere HTML-tags eller hooks der, hvis dine opgaver har brug for dem.
 

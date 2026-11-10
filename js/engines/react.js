@@ -25,6 +25,15 @@
   const REACT_URL = CDN + "react/18.3.1/umd/react.development.js";
   const SERVER_URL = CDN + "react-dom/18.3.1/umd/react-dom-server-legacy.browser.development.js";
   const CLIENT_URL = CDN + "react-dom/18.3.1/umd/react-dom.development.js";
+  const ROUTER_TYPES = `
+declare module "react-router-dom" {
+  import React = require("react");
+  export function BrowserRouter(props: { children?: React.ReactNode }): React.ReactElement;
+  export function Routes(props: { children?: React.ReactNode }): React.ReactElement | null;
+  export function Route(props: { path: string; element: React.ReactElement }): React.ReactElement | null;
+  export function Link(props: { to: string; children?: React.ReactNode }): React.ReactElement;
+}
+`;
 
   // Køres i workeren. Skal være selvstændig (bruger ikke noget udefra).
   function workerMain(loadError) {
@@ -85,11 +94,42 @@
           const rest = Object.assign({}, props);
           const children = rest.children;
           delete rest.children;
+          if (Array.isArray(children)) {
+            children.forEach((child) => {
+              if (child && typeof child === "object" && child._store) child._store.validated = true;
+            });
+          }
           return R.createElement(type, key === undefined ? rest : Object.assign(rest, { key }), ...children);
         },
       };
       jsxRuntime.jsxDEV = jsxRuntime.jsx;
-      const modules = { react: R, "react/jsx-runtime": jsxRuntime, "react/jsx-dev-runtime": jsxRuntime };
+      const RouterContext = R.createContext(null);
+      const router = {
+        BrowserRouter: ({ children }) => {
+          const [path, setPath] = R.useState("/");
+          const value = { path, navigate: setPath };
+          return R.createElement(RouterContext.Provider, { value }, ...(Array.isArray(children) ? children : [children]));
+        },
+        Routes: ({ children }) => {
+          const { path } = R.useContext(RouterContext);
+          const routes = Array.isArray(children) ? children : [children];
+          const match = routes.find((route) => route && route.props && route.props.path === path);
+          const fallback = routes.find((route) => route && route.props && route.props.path === "*");
+          return match ? match.props.element : fallback ? fallback.props.element : null;
+        },
+        Route: () => null,
+        Link: ({ to, children }) => {
+          const { navigate } = R.useContext(RouterContext);
+          return R.createElement("a", {
+            href: to,
+            onClick: (event) => {
+              event.preventDefault();
+              navigate(to);
+            },
+          }, children);
+        },
+      };
+      const modules = { react: R, "react/jsx-runtime": jsxRuntime, "react/jsx-dev-runtime": jsxRuntime, "react-router-dom": router };
       const requireShim = (name) => {
         if (name in modules) return modules[name];
         // Styling challenges validate imports and className, not the stylesheet contents.
@@ -225,12 +265,49 @@
           const jsxRuntime = {
             Fragment: React.Fragment,
             jsx: (type, props, key) => React.createElement(type, key === undefined ? props : Object.assign({}, props, { key })),
-            jsxs: (type, props, key) => React.createElement(type, key === undefined ? props : Object.assign({}, props, { key }))
+            jsxs: (type, props, key) => {
+              const rest = Object.assign({}, props);
+              const children = rest.children;
+              delete rest.children;
+              if (Array.isArray(children)) {
+                children.forEach((child) => {
+                  if (child && typeof child === "object" && child._store) child._store.validated = true;
+                });
+              }
+              return React.createElement(type, key === undefined ? rest : Object.assign(rest, { key }), ...children);
+            }
+          };
+          const RouterContext = React.createContext(null);
+          const router = {
+            BrowserRouter: ({ children }) => {
+              const [path, setPath] = React.useState("/");
+              const value = { path, navigate: setPath };
+              return React.createElement(RouterContext.Provider, { value }, ...(Array.isArray(children) ? children : [children]));
+            },
+            Routes: ({ children }) => {
+              const { path } = React.useContext(RouterContext);
+              const routes = Array.isArray(children) ? children : [children];
+              const match = routes.find((route) => route && route.props && route.props.path === path);
+              const fallback = routes.find((route) => route && route.props && route.props.path === "*");
+              return match ? match.props.element : fallback ? fallback.props.element : null;
+            },
+            Route: () => null,
+            Link: ({ to, children }) => {
+              const { navigate } = React.useContext(RouterContext);
+              return React.createElement("a", {
+                href: to,
+                onClick: (event) => {
+                  event.preventDefault();
+                  navigate(to);
+                }
+              }, children);
+            }
           };
           const modules = {
             react: React,
             "react/jsx-runtime": jsxRuntime,
-            "react/jsx-dev-runtime": jsxRuntime
+            "react/jsx-dev-runtime": jsxRuntime,
+            "react-router-dom": router
           };
           const requireShim = (name) => {
             if (name in modules) return modules[name];
@@ -338,6 +415,7 @@
       ts.typescriptDefaults.addExtraLib(types.index, "file:///node_modules/@types/react/index.d.ts");
       ts.typescriptDefaults.addExtraLib(types.jsx, "file:///node_modules/@types/react/jsx-runtime.d.ts");
       ts.typescriptDefaults.addExtraLib(types.assets, "file:///lab/assets.d.ts");
+      ts.typescriptDefaults.addExtraLib(ROUTER_TYPES, "file:///node_modules/@types/react-router-dom/index.d.ts");
       ts.typescriptDefaults.addExtraLib("declare function alert(message?: any): void;", "file:///node_modules/@types/react/alert.d.ts");
       ts.typescriptDefaults.setEagerModelSync(true);
       model = editor.model;
