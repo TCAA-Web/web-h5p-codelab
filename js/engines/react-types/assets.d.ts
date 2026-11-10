@@ -27,3 +27,10 @@ declare module "*.mp4" {
   const src: string;
   export default src;
 }
+
+declare module "*.css";
+
+declare module "*.module.scss" {
+  const classes: Record<string, string>;
+  export default classes;
+}

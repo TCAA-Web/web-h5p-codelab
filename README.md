@@ -26,6 +26,7 @@ Samme UI bruges til flere kurser. Kurset vælges med en URL-parameter, så hver 
 | React Components | `index.html?course=react-components` |
 | React Children | `index.html?course=react-children` |
 | React Props | `index.html?course=react-props` |
+| React Events | `index.html?course=react-events` |
 
 Hvert kursus gemmer sit eget forløb (kode, fremskridt, badges) i `sessionStorage`. Der er også en kursusvælger i topbaren.
 
@@ -100,7 +101,7 @@ Et krav er enten **statisk** eller **kørende**:
 
 ### React (`js/courses/react-*.js`)
 
-Elevens kode er en `App.tsx`. Komponenten (`export default`, `App` eller `entry`) vises med `react-dom/server` i en Web Worker og tjekkes som HTML. Kurset kan derfor vise komponenter, JSX, props og children – men ikke events eller tilstand efter første render.
+Elevens kode er en `App.tsx`. Previewet mountes interaktivt i et sandboxed iframe, så events som `onClick` kan køre, og `alert()` kan vise en dialog. Automatiske checks bruger fortsat `react-dom/server` i en Web Worker til statisk HTML.
 
 ```js
 // Statisk: DOM-baseret tjek af det viste resultat og af koden

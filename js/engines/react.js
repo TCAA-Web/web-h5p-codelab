@@ -2,9 +2,8 @@
  * React-motor (TSX).
  *  - Typefejl fra Monacos TypeScript-compiler med forenklede React-typer (js/engines/react-types/).
  *  - Koden oversættes til JavaScript og køres i en Web Worker med timeout.
- *  - Komponenten (default export, `App` eller `challenge.entry`) vises med react-dom/server
- *    (statisk markup – ingen events eller tilstand efter første render). HTML'en vises i
- *    preview og tjekkes med DOM-baserede validatorer i forælderen.
+ *  - Previewet mountes interaktivt i et sandboxed iframe; checks bruger react-dom/server
+ *    til statisk markup og DOM-baseret validering i forælderen.
  *
  * Krav (checks) i et React-kursus er enten
  *   - statiske:  test: (c) => ...      c.$, c.$$, c.text(el), c.texts(els), c.root, c.html,
@@ -25,6 +24,7 @@
   const CDN = "https://cdnjs.cloudflare.com/ajax/libs/";
   const REACT_URL = CDN + "react/18.3.1/umd/react.development.js";
   const SERVER_URL = CDN + "react-dom/18.3.1/umd/react-dom-server-legacy.browser.development.js";
+  const CLIENT_URL = CDN + "react-dom/18.3.1/umd/react-dom.development.js";
 
   // Køres i workeren. Skal være selvstændig (bruger ikke noget udefra).
   function workerMain(loadError) {
@@ -92,6 +92,12 @@
       const modules = { react: R, "react/jsx-runtime": jsxRuntime, "react/jsx-dev-runtime": jsxRuntime };
       const requireShim = (name) => {
         if (name in modules) return modules[name];
+        // Styling challenges validate imports and className, not the stylesheet contents.
+        if (/\.module\.scss$/i.test(name)) {
+          const classes = new Proxy({}, { get: (_, key) => (typeof key === "string" ? key + "__module" : undefined) });
+          return { __esModule: true, default: classes };
+        }
+        if (/\.(?:css|scss)$/i.test(name)) return {};
         // Billeder: filerne ligger i mappen assets ved siden af App.tsx. Importen giver stien (som i Vite).
         if (/\.(jpe?g|png|gif|svg|webp|mp4)$/i.test(name)) {
           const available = Object.keys(assets);
@@ -104,7 +110,7 @@
           }
           return assets[file];
         }
-        throw new Error('Kan ikke importere "' + name + '". I dette kursus kan du kun importere fra "react" og assets fra "./assets/".');
+        throw new Error('Kan ikke importere "' + name + '". I dette kursus kan du kun importere fra "react", stylesheets og assets fra "./assets/".');
       };
 
       let get = null;
@@ -189,15 +195,67 @@
     ".lab-warn{margin-top:24px;background:#fffbeb;border:1px solid #f59e0b;color:#92400e;padding:10px 12px;border-radius:8px;font-size:12px}" +
     ".lab-warn pre{margin:6px 0 0;white-space:pre-wrap;font-family:ui-monospace,Menlo,monospace}";
 
-  function previewDoc(out) {
+  function previewDoc(out, js) {
     const warnings = out.logs.filter((l) => l.level === "warn" || l.level === "error");
-    let body = out.error ? `<div class="lab-error">${escapeHtml(out.error)}</div>` : out.html || "";
+    let body = out.error
+      ? `<div class="lab-error">${escapeHtml(out.error)}</div>`
+      : '<div id="root"></div>';
     if (warnings.length) {
       body += `<details class="lab-warn" open><summary>React-advarsler (${warnings.length})</summary><pre>${escapeHtml(
         warnings.map((l) => l.text).join("\n\n")
       )}</pre></details>`;
     }
-    return `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><style>${PREVIEW_CSS}</style></head><body>${body}</body></html>`;
+    if (out.error) {
+      return `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><style>${PREVIEW_CSS}</style></head><body>${body}</body></html>`;
+    }
+    const safeJs = JSON.stringify(js).replace(/</g, "\\u003c").replace(/\u2028/g, "\\u2028").replace(/\u2029/g, "\\u2029");
+    const safeAssets = JSON.stringify(assetUrls()).replace(/</g, "\\u003c");
+    return `<!doctype html><html><head><meta charset="utf-8"><base target="_blank"><style>${PREVIEW_CSS}</style></head><body>${body}<script src="${REACT_URL}"></script><script src="${CLIENT_URL}"></script><script>
+      (function () {
+        const root = document.getElementById("root");
+        const showError = (err) => {
+          const box = document.createElement("div");
+          box.className = "lab-error";
+          box.textContent = err && err.message ? err.message : String(err);
+          root.replaceChildren(box);
+        };
+        try {
+          const source = ${safeJs};
+          const assets = ${safeAssets};
+          const jsxRuntime = {
+            Fragment: React.Fragment,
+            jsx: (type, props, key) => React.createElement(type, key === undefined ? props : Object.assign({}, props, { key })),
+            jsxs: (type, props, key) => React.createElement(type, key === undefined ? props : Object.assign({}, props, { key }))
+          };
+          const modules = {
+            react: React,
+            "react/jsx-runtime": jsxRuntime,
+            "react/jsx-dev-runtime": jsxRuntime
+          };
+          const requireShim = (name) => {
+            if (name in modules) return modules[name];
+            // Match the worker's stylesheet simulation in the live preview.
+            if (/\\.module\\.scss$/i.test(name)) {
+              const classes = new Proxy({}, { get: (_, key) => (typeof key === "string" ? key + "__module" : undefined) });
+              return { __esModule: true, default: classes };
+            }
+            if (/\\.(?:css|scss)$/i.test(name)) return {};
+            if (/\\.(jpe?g|png|gif|svg|webp|mp4)$/i.test(name) && name.startsWith("./assets/")) {
+              const file = name.split("/").pop();
+              if (file in assets) return assets[file];
+            }
+            throw new Error('Kan ikke importere "' + name + '".');
+          };
+          const module = { exports: {} };
+          new Function("exports", "module", "require", "console", source)(module.exports, module, requireShim, console);
+          const Entry = module.exports.default || module.exports.App;
+          if (typeof Entry !== "function") throw new Error("Der er intet komponent at vise.");
+          ReactDOM.createRoot(root).render(React.createElement(Entry));
+        } catch (err) {
+          showError(err);
+        }
+      })();
+    </script></body></html>`;
   }
 
   let model = null;
@@ -260,6 +318,7 @@
         return "React-typerne kunne ikke hentes (" + err.message + "). Genindlæs siden.";
       }
       const ts = monaco.languages.typescript;
+      
       ts.typescriptDefaults.setCompilerOptions(
         Object.assign(
           {
@@ -279,6 +338,7 @@
       ts.typescriptDefaults.addExtraLib(types.index, "file:///node_modules/@types/react/index.d.ts");
       ts.typescriptDefaults.addExtraLib(types.jsx, "file:///node_modules/@types/react/jsx-runtime.d.ts");
       ts.typescriptDefaults.addExtraLib(types.assets, "file:///lab/assets.d.ts");
+      ts.typescriptDefaults.addExtraLib("declare function alert(message?: any): void;", "file:///node_modules/@types/react/alert.d.ts");
       ts.typescriptDefaults.setEagerModelSync(true);
       model = editor.model;
       return true;
@@ -287,11 +347,12 @@
     analyze: () => TSCore.analyze(model),
 
     async preview(code, ui, isStale, challenge) {
-      const out = await execute(await TSCore.emit(model), challenge, []);
+      const js = await TSCore.emit(model);
+      const out = await execute(js, challenge, []);
       if (isStale()) return;
-      // Safari bygger videokontrollerne med script, så de virker kun med allow-scripts. Uden allow-same-origin er koden stadig isoleret fra siden.
-      ui.frame.setAttribute("sandbox", "allow-scripts allow-popups allow-popups-to-escape-sandbox");
-      ui.frame.srcdoc = previewDoc(out);
+      // Ingen allow-same-origin: elevens kode holdes isoleret fra siden.
+      ui.frame.setAttribute("sandbox", "allow-scripts allow-modals allow-popups allow-popups-to-escape-sandbox");
+      ui.frame.srcdoc = previewDoc(out, js);
     },
 
     async run(challenge, code) {
